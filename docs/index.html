@@ -58,28 +58,29 @@
 				<section>
 					<h2>Containerfile Best Practices</h2>
 					<div class="highlight-box">
-						<strong>Key Principle:</strong> Least-changing content at the bottom of your Containerfile
+						<strong>Key Principle:</strong> Least-changing content at the bottom
 					</div>
-					<ul>
-						<li>Order layers by change frequency</li>
-						<li>System dependencies first</li>
-						<li>Application code last</li>
-						<li>Maximize layer reuse across builds</li>
-					</ul>
-					<pre><code class="dockerfile" data-trim>
-# Base image (rarely changes)
-FROM registry.access.redhat.com/ubi9/ubi:latest
+					<div class="two-column">
+						<div>
+							<ul>
+								<li>Order layers by change frequency</li>
+								<li>System dependencies first</li>
+								<li>Application code last</li>
+							</ul>
+						</div>
+						<div>
+							<pre><code class="dockerfile" data-trim>
+FROM ubi9:latest
 
-# System packages (changes infrequently)
-RUN dnf install -y python3 python3-pip && dnf clean all
+RUN dnf install -y python3
 
-# Dependencies (changes occasionally)
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-# Application code (changes frequently)
 COPY . /app
-					</code></pre>
+							</code></pre>
+						</div>
+					</div>
 				</section>
 
 				<section>
@@ -101,35 +102,29 @@ COPY . /app
 
 				<section>
 					<h2>zstd:chunked Compression</h2>
-					<h3>Faster Pulls, Better Compression</h3>
 					<div class="two-column">
 						<div>
 							<strong>Benefits:</strong>
 							<ul>
-								<li>Superior compression ratios</li>
-								<li>Faster image pull times</li>
+								<li>Superior compression</li>
+								<li>Faster image pulls</li>
 								<li>Reduced storage costs</li>
-								<li>Better for CI/CD pipelines</li>
-								<li>Ideal for ephemeral environments</li>
+								<li>Better for CI/CD</li>
 							</ul>
 						</div>
 						<div>
 							<strong>Configuration:</strong>
 							<pre><code class="bash" data-trim>
-# Podman configuration
-[storage]
-compression = "zstd:chunked"
-
-# Push with zstd:chunked
+# Podman push
 podman push \
   --compression-format zstd:chunked \
   myimage:latest
 							</code></pre>
 						</div>
 					</div>
-					<div class="highlight-box small-text">
-						<strong>Compatibility Check:</strong> Verify your registry supports zstd:chunked (Podman ✓, JFrog Artifactory ?, Rancher ?)
-					</div>
+					<p class="small-text" style="margin-top: 20px;">
+						<strong>Note:</strong> Verify your registry supports zstd:chunked
+					</p>
 				</section>
 
 				<!-- SECTION 2: KUBERNETES -->
@@ -207,31 +202,32 @@ skaffold run
 
 				<section>
 					<h2>Zarf: Airgapped Kubernetes Deployment</h2>
-					<ul>
-						<li>Package entire K8s applications with dependencies</li>
-						<li>Deploy to airgapped/disconnected environments</li>
-						<li>Built-in registry and git server</li>
-						<li>Declarative package definitions</li>
-						<li>Perfect for secure/classified networks</li>
-					</ul>
-					<pre><code class="yaml" data-trim>
-# zarf.yaml
+					<div class="two-column">
+						<div>
+							<ul>
+								<li>Package K8s apps with dependencies</li>
+								<li>Deploy to airgapped environments</li>
+								<li>Built-in registry and git server</li>
+								<li>For secure/classified networks</li>
+							</ul>
+							<p class="small-text">
+								<a href="https://zarf.dev" target="_blank">https://zarf.dev</a>
+							</p>
+						</div>
+						<div>
+							<pre><code class="yaml" data-trim>
 kind: ZarfPackageConfig
 metadata:
   name: my-application
 components:
   - name: app
-    required: true
     images:
-      - registry.example.com/my-app:v1.0.0
+      - my-app:v1.0.0
     manifests:
-      - name: app-manifests
-        files:
-          - k8s/deployment.yaml
-					</code></pre>
-					<p class="small-text">
-						<a href="https://zarf.dev" target="_blank">https://zarf.dev</a>
-					</p>
+      - k8s/deployment.yaml
+							</code></pre>
+						</div>
+					</div>
 				</section>
 
 				<!-- SECTION 3: DSO -->
@@ -430,23 +426,20 @@ spec:
 
 				<section>
 					<h2>Edge Manager: Update Distribution</h2>
-					<h3>Airgapped Edge Architecture</h3>
-					<div style="text-align: left; padding: 20px;">
-						<pre style="font-family: monospace; font-size: 0.6em; line-height: 1.4;">
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│  Central Repo   │ ───▶ │  Edge Manager    │ ◀─── │  Edge Device 1  │
-│  (Internet)     │      │  (Customer Site) │      └─────────────────┘
-└─────────────────┘      └──────────────────┘
-                                  │                  ┌─────────────────┐
-                                  └──────────────────│  Edge Device 2  │
-                                                     └─────────────────┘
+					<div style="text-align: left; padding: 10px;">
+						<pre style="font-family: monospace; font-size: 0.55em; line-height: 1.3;">
+┌─────────────┐    ┌──────────────┐    ┌────────────┐
+│ Central Repo│ ─▶ │ Edge Manager │ ◀─ │  Device 1  │
+└─────────────┘    │ (On-premise) │    └────────────┘
+                   └──────────────┘    ┌────────────┐
+                          └──────────── │  Device 2  │
+                                        └────────────┘
 						</pre>
 					</div>
 					<ul>
 						<li>Centralized update management for airgapped sites</li>
 						<li>Devices check in and pull updates</li>
-						<li>Gradual rollout capabilities</li>
-						<li>Health monitoring and reporting</li>
+						<li>Gradual rollout with health monitoring</li>
 					</ul>
 				</section>
 
@@ -595,22 +588,29 @@ helm install vllm-cpu rancher/vllm \
 				<section>
 					<h2>Red Hat Hardened Images</h2>
 					<div class="highlight-box">
-						<strong>Free Resource:</strong> Red Hat provides hardened container images with security best practices built in
+						<strong>Free Resource:</strong> Hardened container images with security best practices
 					</div>
-					<ul>
-						<li>Minimal attack surface</li>
-						<li>Regular security updates</li>
-						<li>Compliance-ready configurations</li>
-						<li>Production-tested</li>
-					</ul>
-					<pre><code class="bash" data-trim>
-# Available from Red Hat registry
-podman pull registry.access.redhat.com/ubi9/ubi-minimal:latest
-podman pull registry.access.redhat.com/ubi9/python-311:latest
-podman pull registry.access.redhat.com/ubi9/nodejs-20:latest
-					</code></pre>
+					<div class="two-column">
+						<div>
+							<ul>
+								<li>Minimal attack surface</li>
+								<li>Regular security updates</li>
+								<li>Compliance-ready</li>
+								<li>Production-tested</li>
+							</ul>
+						</div>
+						<div>
+							<pre><code class="bash" data-trim>
+podman pull \
+  registry.access.redhat.com/ubi9/ubi-minimal
+
+podman pull \
+  registry.access.redhat.com/ubi9/python-311
+							</code></pre>
+						</div>
+					</div>
 					<p class="small-text">
-						Check them out at <a href="https://catalog.redhat.com" target="_blank">catalog.redhat.com</a>
+						<a href="https://catalog.redhat.com" target="_blank">catalog.redhat.com</a>
 					</p>
 				</section>
 
