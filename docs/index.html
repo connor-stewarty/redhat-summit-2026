@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<title>Red Hat Summit 2026 - Key Developments & Innovations</title>
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css">
+		<link rel="stylesheet" href="css/custom-theme.css">
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Red+Hat+Display:wght@700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<!-- TITLE SLIDE -->
+				<section class="title-slide" data-section="intro">
+					<h1>Red Hat Summit 2026</h1>
+					<h3>Notable Developments & Innovations</h3>
+					<p style="margin-top: 60px;">A Technical Overview for IEEE Members</p>
+					<p class="small-text" style="margin-top: 40px; color: #8c8c8c;">
+						Enterprise Open Source Technologies<br>
+						Cloud Infrastructure • Containerization • Automation • Security
+					</p>
+				</section>
+				<!-- AGENDA -->
+				<section>
+					<h2>Agenda</h2>
+					<div class="two-column">
+						<div>
+							<ul>
+								<li>Container Optimization</li>
+								<li>Kubernetes Adoption</li>
+								<li>Developer Security Operations</li>
+								<li>Code Signing & Supply Chain</li>
+								<li>Security Enforcement</li>
+							</ul>
+						</div>
+						<div>
+							<ul>
+								<li>Edge Computing</li>
+								<li>AI & Development Tools</li>
+								<li>Modern Dev Workflows</li>
+								<li>Resources & Takeaways</li>
+							</ul>
+						</div>
+					</div>
+				</section>
+
+				<!-- SECTION 1: CONTAINER OPTIMIZATION -->
+				<section class="section-divider">
+					<h2>Container Optimization<br>& Performance</h2>
+				</section>
+
+				<section>
+					<h2>Containerfile Best Practices</h2>
+					<div class="highlight-box">
+						<strong>Key Principle:</strong> Least-changing content at the bottom of your Containerfile
+					</div>
+					<ul>
+						<li>Order layers by change frequency</li>
+						<li>System dependencies first</li>
+						<li>Application code last</li>
+						<li>Maximize layer reuse across builds</li>
+					</ul>
+					<pre><code class="dockerfile" data-trim>
+# Base image (rarely changes)
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+# System packages (changes infrequently)
+RUN dnf install -y python3 python3-pip && dnf clean all
+
+# Dependencies (changes occasionally)
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Application code (changes frequently)
+COPY . /app
+					</code></pre>
+				</section>
+
+				<section>
+					<h2>Chunkah: Context-Aware Layer Splitting</h2>
+					<p><span class="tool-name">chunkah</span> - Intelligent Dockerfile layer optimization</p>
+					<ul>
+						<li>Post-build layer optimization tool</li>
+						<li>Context-aware splitting of content into optimal layers</li>
+						<li>Works seamlessly with <code>zstd:chunked</code> compression</li>
+						<li>Reduces duplicate content across image layers</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Workflow:</strong> Build normally → Run chunkah → Push optimized image
+					</div>
+					<p class="small-text">
+						<a href="https://github.com/coreos/chunkah" target="_blank">https://github.com/coreos/chunkah</a>
+					</p>
+				</section>
+
+				<section>
+					<h2>zstd:chunked Compression</h2>
+					<h3>Faster Pulls, Better Compression</h3>
+					<div class="two-column">
+						<div>
+							<strong>Benefits:</strong>
+							<ul>
+								<li>Superior compression ratios</li>
+								<li>Faster image pull times</li>
+								<li>Reduced storage costs</li>
+								<li>Better for CI/CD pipelines</li>
+								<li>Ideal for ephemeral environments</li>
+							</ul>
+						</div>
+						<div>
+							<strong>Configuration:</strong>
+							<pre><code class="bash" data-trim>
+# Podman configuration
+[storage]
+compression = "zstd:chunked"
+
+# Push with zstd:chunked
+podman push \
+  --compression-format zstd:chunked \
+  myimage:latest
+							</code></pre>
+						</div>
+					</div>
+					<div class="highlight-box small-text">
+						<strong>Compatibility Check:</strong> Verify your registry supports zstd:chunked (Podman ✓, JFrog Artifactory ?, Rancher ?)
+					</div>
+				</section>
+
+				<!-- SECTION 2: KUBERNETES -->
+				<section class="section-divider">
+					<h2>Kubernetes<br>Adoption Strategy</h2>
+				</section>
+
+				<section>
+					<h2>The Kubernetes Imperative</h2>
+					<blockquote>"Everything/everyone going kube, we need to!"</blockquote>
+					<ul>
+						<li>Industry-wide shift to Kubernetes orchestration</li>
+						<li>Multi-environment workflow support</li>
+						<li>Developer experience preservation</li>
+						<li>Production-grade deployment patterns</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Challenge:</strong> Adopt Kubernetes without disrupting developer workflows
+					</div>
+				</section>
+
+				<section>
+					<h2>Multi-Tool Workflow Strategy</h2>
+					<h3>Compose → Skaffold → Zarf</h3>
+					<table>
+						<thead>
+							<tr>
+								<th>Environment</th>
+								<th>Tool</th>
+								<th>Purpose</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Local Development</td>
+								<td><span class="tool-name">Docker Compose</span></td>
+								<td>Familiar dev workflow</td>
+							</tr>
+							<tr>
+								<td>Integration Testing</td>
+								<td><span class="tool-name">Skaffold</span></td>
+								<td>Convert Compose to K8s</td>
+							</tr>
+							<tr>
+								<td>Production Release</td>
+								<td><span class="tool-name">Zarf</span></td>
+								<td>Airgapped K8s deployment</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
+
+				<section>
+					<h2>Skaffold: Compose to Kubernetes</h2>
+					<pre><code class="bash" data-trim>
+# Convert Docker Compose to Kubernetes manifests
+skaffold init --compose-file docker-compose.yml
+
+# Development with hot-reload
+skaffold dev
+
+# Build and deploy
+skaffold run
+					</code></pre>
+					<ul>
+						<li>Automatically converts Compose files to K8s manifests</li>
+						<li>Supports hot-reload for rapid development</li>
+						<li>Integrates with existing CI/CD pipelines</li>
+						<li>Maintains developer experience</li>
+					</ul>
+					<p class="small-text">
+						<a href="https://skaffold.dev" target="_blank">https://skaffold.dev</a>
+					</p>
+				</section>
+
+				<section>
+					<h2>Zarf: Airgapped Kubernetes Deployment</h2>
+					<ul>
+						<li>Package entire K8s applications with dependencies</li>
+						<li>Deploy to airgapped/disconnected environments</li>
+						<li>Built-in registry and git server</li>
+						<li>Declarative package definitions</li>
+						<li>Perfect for secure/classified networks</li>
+					</ul>
+					<pre><code class="yaml" data-trim>
+# zarf.yaml
+kind: ZarfPackageConfig
+metadata:
+  name: my-application
+components:
+  - name: app
+    required: true
+    images:
+      - registry.example.com/my-app:v1.0.0
+    manifests:
+      - name: app-manifests
+        files:
+          - k8s/deployment.yaml
+					</code></pre>
+					<p class="small-text">
+						<a href="https://zarf.dev" target="_blank">https://zarf.dev</a>
+					</p>
+				</section>
+
+				<!-- SECTION 3: DSO -->
+				<section class="section-divider">
+					<h2>Developer Security<br>Operations (DSO)</h2>
+				</section>
+
+				<section>
+					<h2>Red Hat Developer Hub (RHDH)</h2>
+					<h3>Powered by Backstage</h3>
+					<ul>
+						<li>Unified developer portal (Omni platform)</li>
+						<li>Microservice architecture onboarding</li>
+						<li>Self-service templates for:
+							<ul>
+								<li>Repository creation</li>
+								<li>DevSpaces environments</li>
+								<li>CI/CD pipelines</li>
+								<li>GitOps configuration</li>
+							</ul>
+						</li>
+						<li>Kubernetes backend integration</li>
+						<li>Extensible plugin ecosystem</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Goal:</strong> Reduce developer onboarding from days to minutes
+					</div>
+				</section>
+
+				<section>
+					<h2>Red Hat Artifact Signing (RHRAS)</h2>
+					<p>Enterprise code signing infrastructure</p>
+					<ul>
+						<li>Based on Sigstore project</li>
+						<li>Sign Git commits, tags, and artifacts</li>
+						<li>Keyless signing with identity providers</li>
+						<li>Immutable transparency logs (Rekor)</li>
+						<li>Certificate authority (Fulcio)</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Red Hat Trusted Profile Analyzer (RHTPA)</h2>
+					<p>Automated security scanning and policy enforcement</p>
+					<ul>
+						<li>Container image vulnerability scanning</li>
+						<li>Software composition analysis (SCA)</li>
+						<li>License compliance checking</li>
+						<li>Policy-based gating</li>
+						<li>Integration with CI/CD pipelines</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Integration:</strong> RHDH (portal) → RHRAS (signing) → RHTPA (scanning)
+					</div>
+				</section>
+
+				<!-- SECTION 4: CODE SIGNING -->
+				<section class="section-divider">
+					<h2>Code Signing &<br>Supply Chain Security</h2>
+				</section>
+
+				<section>
+					<h2>Sigstore Ecosystem</h2>
+					<div class="two-column">
+						<div>
+							<h3>Components</h3>
+							<ul>
+								<li><span class="tool-name">Fulcio</span> - Certificate authority</li>
+								<li><span class="tool-name">Rekor</span> - Transparency log</li>
+								<li><span class="tool-name">TUF</span> - Update framework</li>
+								<li><span class="tool-name">Cosign</span> - Container signing</li>
+								<li><span class="tool-name">Gitsign</span> - Git commit signing</li>
+							</ul>
+						</div>
+						<div>
+							<h3>Benefits</h3>
+							<ul>
+								<li>Keyless signing (no key management)</li>
+								<li>Identity-based certificates</li>
+								<li>Public transparency</li>
+								<li>Non-repudiation</li>
+								<li>Supply chain verification</li>
+							</ul>
+						</div>
+					</div>
+					<p class="small-text">
+						<a href="https://www.sigstore.dev" target="_blank">https://www.sigstore.dev</a>
+					</p>
+				</section>
+
+				<section>
+					<h2>Git Signing with Gitsign</h2>
+					<pre><code class="bash" data-trim>
+# Configure Git to use gitsign
+git config --global gpg.format x509
+git config --global gpg.x509.program gitsign
+git config --global commit.gpgsign true
+
+# Commits are automatically signed via OIDC
+git commit -m "feat: add new feature"
+
+# Verify signature
+git verify-commit HEAD
+					</code></pre>
+					<div class="highlight-box">
+						<strong>DevSpaces Integration:</strong> Enable <code>tas-git-config</code> extension to automatically configure gitsign in DevSpaces environments
+					</div>
+				</section>
+
+				<section>
+					<h2>Container Signing with Cosign</h2>
+					<pre><code class="bash" data-trim>
+# Sign a container image
+cosign sign registry.example.com/myapp:v1.0.0
+
+# Verify signature
+cosign verify \
+  --certificate-identity=user@example.com \
+  --certificate-oidc-issuer=https://github.com/login/oauth \
+  registry.example.com/myapp:v1.0.0
+
+# Attach attestations (SBOM, scan results)
+cosign attest --predicate sbom.json \
+  registry.example.com/myapp:v1.0.0
+					</code></pre>
+					<ul>
+						<li>Sign images after build</li>
+						<li>Attach SBOMs and scan results</li>
+						<li>Verify before deployment</li>
+					</ul>
+				</section>
+
+				<!-- SECTION 5: SECURITY ENFORCEMENT -->
+				<section class="section-divider">
+					<h2>Security<br>Enforcement</h2>
+				</section>
+
+				<section>
+					<h2>Policy-Based Security Controls</h2>
+					<ul>
+						<li><strong>Signature Verification:</strong> Only pull signed images</li>
+						<li><strong>Vulnerability Thresholds:</strong> Block images with critical CVEs</li>
+						<li><strong>License Compliance:</strong> Enforce approved licenses</li>
+						<li><strong>Configuration Standards:</strong> Validate K8s manifests</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Enforcement Points:</strong>
+						<ul>
+							<li>CI/CD pipeline gates</li>
+							<li>Admission controllers (Kubernetes)</li>
+							<li>Registry pull policies</li>
+							<li>Runtime security (Rancher, OpenShift)</li>
+						</ul>
+					</div>
+				</section>
+
+				<section>
+					<h2>Image Scanning in Rancher</h2>
+					<ul>
+						<li>Integrated vulnerability scanning</li>
+						<li>Continuous monitoring of running workloads</li>
+						<li>Policy-based alerts and blocking</li>
+						<li>Compliance reporting</li>
+					</ul>
+					<pre><code class="yaml" data-trim>
+# Example: Block images with HIGH/CRITICAL vulnerabilities
+apiVersion: security.rancher.io/v1
+kind: ImageScanPolicy
+metadata:
+  name: block-critical
+spec:
+  maxCritical: 0
+  maxHigh: 0
+  action: block
+					</code></pre>
+				</section>
+
+				<!-- SECTION 6: EDGE -->
+				<section class="section-divider">
+					<h2>Edge Computing<br>Solutions</h2>
+				</section>
+
+				<section>
+					<h2>Device Edge: Immutable OS</h2>
+					<ul>
+						<li>Immutable operating system for edge devices</li>
+						<li>Container-based application deployment</li>
+						<li>Atomic updates and rollbacks</li>
+						<li>Reduced attack surface</li>
+						<li>Ideal for ABITT/ITS deployments</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Use Cases:</strong> Industrial controllers, medical devices, transportation systems, point-of-sale terminals
+					</div>
+				</section>
+
+				<section>
+					<h2>Edge Manager: Update Distribution</h2>
+					<h3>Airgapped Edge Architecture</h3>
+					<div style="text-align: left; padding: 20px;">
+						<pre style="font-family: monospace; font-size: 0.6em; line-height: 1.4;">
+┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
+│  Central Repo   │ ───▶ │  Edge Manager    │ ◀─── │  Edge Device 1  │
+│  (Internet)     │      │  (Customer Site) │      └─────────────────┘
+└─────────────────┘      └──────────────────┘
+                                  │                  ┌─────────────────┐
+                                  └──────────────────│  Edge Device 2  │
+                                                     └─────────────────┘
+						</pre>
+					</div>
+					<ul>
+						<li>Centralized update management for airgapped sites</li>
+						<li>Devices check in and pull updates</li>
+						<li>Gradual rollout capabilities</li>
+						<li>Health monitoring and reporting</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>SHIELD Project: Low-Code OS Builder</h2>
+					<ul>
+						<li>Simplified bootc image creation</li>
+						<li>Web-based interface for non-technical users</li>
+						<li>Combine base OS with application containers</li>
+						<li>Deploy hardened, immutable systems</li>
+						<li>Pre-configured security policies</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Target Audience:</strong> Operations teams without deep Linux expertise
+					</div>
+				</section>
+
+				<section>
+					<h2>MicroShift: Lightweight Kubernetes</h2>
+					<ul>
+						<li>Kubernetes for edge devices</li>
+						<li>Minimal resource footprint</li>
+						<li>Compatible with standard K8s APIs</li>
+						<li>Runs on resource-constrained hardware</li>
+						<li>Simplified operations</li>
+					</ul>
+					<pre><code class="bash" data-trim>
+# MicroShift system requirements
+CPU: 2 cores minimum
+RAM: 2GB minimum (4GB recommended)
+Storage: 10GB minimum
+
+# Standard kubectl works
+kubectl get pods --all-namespaces
+					</code></pre>
+				</section>
+
+				<!-- SECTION 7: AI -->
+				<section class="section-divider">
+					<h2>AI & Development<br>Tools</h2>
+				</section>
+
+				<section>
+					<h2>AI Agents: Kagenti</h2>
+					<ul>
+						<li>Framework for building AI agents</li>
+						<li>Multi-step reasoning and planning</li>
+						<li>Tool integration (APIs, databases, systems)</li>
+						<li>Enterprise deployment patterns</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Use Cases:</strong>
+						<ul>
+							<li>Automated incident response</li>
+							<li>Code review and analysis</li>
+							<li>Infrastructure automation</li>
+							<li>Documentation generation</li>
+						</ul>
+					</div>
+				</section>
+
+				<section>
+					<h2>vLLM: CPU-Only Mode</h2>
+					<ul>
+						<li>Run large language models without GPUs</li>
+						<li>Testing and development on standard hardware</li>
+						<li>Available in Rancher deployments</li>
+						<li>Reduced infrastructure costs for non-production</li>
+					</ul>
+					<pre><code class="bash" data-trim>
+# Deploy vLLM in CPU mode
+helm install vllm-cpu rancher/vllm \
+  --set model=meta-llama/Llama-2-7b \
+  --set device=cpu \
+  --set replicas=1
+					</code></pre>
+					<p class="small-text">
+						<strong>Note:</strong> CPU inference is slower but suitable for development/testing
+					</p>
+				</section>
+
+				<section>
+					<h2>Kaiden: Sandboxed Coding Agents</h2>
+					<ul>
+						<li>Run AI coding agents in secure sandboxes</li>
+						<li>Isolated execution environments</li>
+						<li>Prevent unintended system modifications</li>
+						<li>Safe experimentation with AI-generated code</li>
+					</ul>
+					<div class="highlight-box">
+						<strong>Safety First:</strong> AI-generated code executes in isolated containers, preventing potential security or stability issues
+					</div>
+				</section>
+
+				<!-- SECTION 8: DEVELOPMENT WORKFLOWS -->
+				<section class="section-divider">
+					<h2>Modern Development<br>Workflows</h2>
+				</section>
+
+				<section>
+					<h2>Evolution: Amadeus Case Study</h2>
+					<h3>Four-Stage Journey</h3>
+					<ol>
+						<li><strong>Vagrant + Docker + OpenShift:</strong> Fast but hard to support VMs</li>
+						<li><strong>Docker Desktop + Kind:</strong> Easy setup, no file sync, not true OpenShift</li>
+						<li><strong>Podman Desktop + Kind:</strong> Better container engine, similar workflow</li>
+						<li><strong>Podman Desktop + IDE + Helm:</strong> Local development with K8s testing, CI/CD on real cluster</li>
+					</ol>
+					<div class="highlight-box">
+						<strong>Current State:</strong> Developers use Podman Desktop locally, Helm/Kind for local K8s testing, full CI/CD runs on production-like clusters
+					</div>
+				</section>
+
+				<section>
+					<h2>Hybrid Development Pattern</h2>
+					<div class="two-column">
+						<div>
+							<h3>Local Development</h3>
+							<ul>
+								<li>Podman Desktop</li>
+								<li>IDE integration</li>
+								<li>Fast iteration cycles</li>
+								<li>Compose for multi-container</li>
+							</ul>
+						</div>
+						<div>
+							<h3>Testing & CI/CD</h3>
+							<ul>
+								<li>Kind for local K8s</li>
+								<li>Helm charts</li>
+								<li>Full cluster testing in CI</li>
+								<li>Production parity</li>
+							</ul>
+						</div>
+					</div>
+					<p style="margin-top: 40px;">
+						<em>Balance developer experience with production fidelity</em>
+					</p>
+				</section>
+
+				<!-- SECTION 9: RESOURCES -->
+				<section class="section-divider">
+					<h2>Resources &<br>Key Takeaways</h2>
+				</section>
+
+				<section>
+					<h2>Red Hat Hardened Images</h2>
+					<div class="highlight-box">
+						<strong>Free Resource:</strong> Red Hat provides hardened container images with security best practices built in
+					</div>
+					<ul>
+						<li>Minimal attack surface</li>
+						<li>Regular security updates</li>
+						<li>Compliance-ready configurations</li>
+						<li>Production-tested</li>
+					</ul>
+					<pre><code class="bash" data-trim>
+# Available from Red Hat registry
+podman pull registry.access.redhat.com/ubi9/ubi-minimal:latest
+podman pull registry.access.redhat.com/ubi9/python-311:latest
+podman pull registry.access.redhat.com/ubi9/nodejs-20:latest
+					</code></pre>
+					<p class="small-text">
+						Check them out at <a href="https://catalog.redhat.com" target="_blank">catalog.redhat.com</a>
+					</p>
+				</section>
+
+				<section>
+					<h2>Key Takeaways</h2>
+					<ul>
+						<li><strong>Container Optimization:</strong> Use zstd:chunked and chunkah for faster pulls</li>
+						<li><strong>Kubernetes Migration:</strong> Adopt gradually with Compose → Skaffold → Zarf</li>
+						<li><strong>Security:</strong> Implement code signing and scanning early in the pipeline</li>
+						<li><strong>Edge Computing:</strong> Immutable OS + Edge Manager for reliable deployments</li>
+						<li><strong>Developer Experience:</strong> Balance local speed with production parity</li>
+						<li><strong>AI Integration:</strong> Sandbox AI-generated code, test LLMs on CPU</li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Implementation Priorities</h2>
+					<h3>Suggested Adoption Order</h3>
+					<ol>
+						<li><strong>Quick Wins:</strong> Container optimization (chunkah, zstd:chunked)</li>
+						<li><strong>Security Foundation:</strong> Image scanning and vulnerability policies</li>
+						<li><strong>Developer Platform:</strong> RHDH for standardized onboarding</li>
+						<li><strong>Kubernetes Strategy:</strong> Pilot Skaffold for integration testing</li>
+						<li><strong>Supply Chain:</strong> Implement Sigstore-based signing</li>
+						<li><strong>Edge (if applicable):</strong> Evaluate MicroShift or Device Edge</li>
+					</ol>
+				</section>
+
+				<section>
+					<h2>Additional Resources</h2>
+					<div class="small-text" style="text-align: left;">
+						<ul>
+							<li><strong>Chunkah:</strong> <a href="https://github.com/coreos/chunkah">github.com/coreos/chunkah</a></li>
+							<li><strong>Skaffold:</strong> <a href="https://skaffold.dev">skaffold.dev</a></li>
+							<li><strong>Zarf:</strong> <a href="https://zarf.dev">zarf.dev</a></li>
+							<li><strong>Sigstore:</strong> <a href="https://www.sigstore.dev">sigstore.dev</a></li>
+							<li><strong>Red Hat Developer Hub:</strong> <a href="https://developers.redhat.com/rhdh">developers.redhat.com/rhdh</a></li>
+							<li><strong>MicroShift:</strong> <a href="https://microshift.io">microshift.io</a></li>
+							<li><strong>vLLM:</strong> <a href="https://github.com/vllm-project/vllm">github.com/vllm-project/vllm</a></li>
+							<li><strong>Red Hat UBI:</strong> <a href="https://catalog.redhat.com">catalog.redhat.com</a></li>
+						</ul>
+					</div>
+				</section>
+
+				<!-- CONCLUSION -->
+				<section class="section-divider" data-section="conclusion">
+					<h1>Thank You</h1>
+					<h3 style="margin-top: 40px;">Questions?</h3>
+					<p style="margin-top: 80px; color: #8c8c8c;">
+						Red Hat Summit 2026 Technical Overview<br>
+						Presentation for IEEE Members
+					</p>
+				</section>
+			</div>
+		</div>
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			Reveal.initialize({
+				hash: true,
+				slideNumber: 'c/t',
+				showSlideNumber: 'all',
+				transition: 'slide',
+				transitionSpeed: 'default',
+				backgroundTransition: 'fade',
+				center: true,
+				controls: true,
+				progress: true,
+				history: true,
+				keyboard: true,
+				overview: true,
+				touch: true,
+				loop: false,
+				fragments: true,
+				help: true,
+				width: 1280,
+				height: 720,
+				margin: 0.04,
+				minScale: 0.2,
+				maxScale: 2.0,
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
